@@ -121,14 +121,19 @@
   }
 }
 
-/* @layer utilities {
-  .gradient {
-    @apply bg-gradient-to-br from-blue-600 to-purple-600;
-  }
-  .gradient-title {
-    @apply gradient font-extrabold tracking-tighter pr-2 pb-2 text-transparent bg-clip-text;
-  }
-} */
+.gradient {
+  background: linear-gradient(to right, #007bff, #6f42c1);
+}
+
+.gradient-title {
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(to right, #007bff, #6f42c1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 
 .hero-image-wrapper {
   perspective: 1000px;
