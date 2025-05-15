@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/header";
 const inter = Inter({ subsets: ["latin"] });
 
+
 export const metadata = {
   title: "Create Next App",
   description: "One stop finance app",
@@ -13,6 +14,7 @@ export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
       <html lang="en">
+
         <body className={inter.className}>
 
           <Header />
