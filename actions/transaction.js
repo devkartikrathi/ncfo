@@ -306,3 +306,61 @@ function calculateNextRecurringDate(startDate, interval) {
 
   return date;
 }
+
+// AI Transaction from Prompt
+export async function createTransactionFromPrompt(prompt) {
+  try {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    // Get user and default account
+    const user = await db.user.findUnique({ where: { clerkUserId: userId } });
+    if (!user) throw new Error("User not found");
+    const defaultAccount = await db.account.findFirst({ where: { userId: user.id, isDefault: true } });
+    if (!defaultAccount) throw new Error("No default account found");
+
+    // Prompt Gemini to extract transaction details
+    const aiPrompt = `
+      Analyze the following user input and extract the transaction details in JSON format:
+      - Type: INCOME or EXPENSE
+      - Amount (number only)
+      - Date (ISO format, use today if not specified)
+      - Description (short summary)
+      - Category (one of: housing, transportation, groceries, utilities, entertainment, food, shopping, healthcare, education, personal, travel, insurance, gifts, bills, other-expense, salary, other-income)
+      
+      Only respond with valid JSON in this exact format:
+      {
+        "type": "INCOME" | "EXPENSE",
+        "amount": number,
+        "date": "ISO date string",
+        "description": "string",
+        "category": "string"
+      }
+      
+      User input: "${prompt}"
+    `;
+
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: [aiPrompt],
+    });
+    const text = await result.text;
+    const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
+    let data;
+    try {
+      data = JSON.parse(cleanedText);
+    } catch (e) {
+      throw new Error("Could not parse transaction details from prompt");
+    }
+    if (!data.amount || !data.type || !data.category) {
+      throw new Error("Incomplete transaction details extracted");
+    }
+    // Use default account
+    data.accountId = defaultAccount.id;
+    // Use today if date missing
+    data.date = data.date ? new Date(data.date) : new Date();
+    return await createTransaction(data);
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
